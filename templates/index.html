@@ -1,0 +1,1804 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📁 内网文件分享</title>
+    <style>
+        /* ============================================================
+           全局样式 & CSS 变量
+           ============================================================ */
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-light: #eef2ff;
+            --success: #10b981;
+            --success-hover: #059669;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --radius: 12px;
+            --radius-sm: 8px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            --transition: all 0.2s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+                         'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica,
+                         Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--gray-800);
+            line-height: 1.6;
+        }
+
+        /* ============================================================
+           布局容器
+           ============================================================ */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px 16px 40px;
+        }
+
+        /* ============================================================
+           页头
+           ============================================================ */
+        .header {
+            text-align: center;
+            padding: 30px 0 20px;
+            color: white;
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* ============================================================
+           卡片
+           ============================================================ */
+        .card {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            padding: 28px;
+            margin-bottom: 20px;
+            transition: var(--transition);
+        }
+        .card:hover {
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+        }
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--gray-800);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card-title .icon {
+            font-size: 20px;
+        }
+
+        /* ============================================================
+           上传区域
+           ============================================================ */
+        .upload-zone {
+            border: 2px dashed var(--gray-300);
+            border-radius: var(--radius);
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            background: var(--gray-50);
+            position: relative;
+        }
+        .upload-zone:hover,
+        .upload-zone.drag-over {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+        .upload-zone.drag-over {
+            transform: scale(1.01);
+        }
+        .upload-zone .upload-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+        .upload-zone .upload-text {
+            font-size: 16px;
+            color: var(--gray-600);
+            margin-bottom: 8px;
+        }
+        .upload-zone .upload-hint {
+            font-size: 13px;
+            color: var(--gray-400);
+        }
+        .upload-zone input[type="file"] {
+            display: none;
+        }
+
+        /* ============================================================
+           进度条
+           ============================================================ */
+        .progress-container {
+            display: none;
+            margin-top: 20px;
+        }
+        .progress-container.active {
+            display: block;
+        }
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: var(--gray-200);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), #818cf8);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .progress-text {
+            text-align: center;
+            font-size: 13px;
+            color: var(--gray-500);
+            margin-top: 8px;
+        }
+
+        /* ============================================================
+           上传结果
+           ============================================================ */
+        .upload-result {
+            display: none;
+            margin-top: 20px;
+            padding: 16px;
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            border-radius: var(--radius-sm);
+        }
+        .upload-result.active {
+            display: block;
+        }
+        .upload-result.error {
+            background: #fef2f2;
+            border-color: #fecaca;
+        }
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .result-header.success {
+            color: var(--success);
+        }
+        .result-header.error {
+            color: var(--danger);
+        }
+        .result-info {
+            font-size: 13px;
+            color: var(--gray-600);
+            margin-bottom: 10px;
+        }
+        .share-link-box {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .share-link-input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            color: var(--gray-700);
+            background: white;
+            outline: none;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+        .share-link-input:focus {
+            border-color: var(--primary);
+        }
+
+        /* ============================================================
+           按钮
+           ============================================================ */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        .btn-success:hover {
+            background: var(--success-hover);
+            transform: translateY(-1px);
+        }
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        .btn-danger:hover {
+            background: var(--danger-hover);
+            transform: translateY(-1px);
+        }
+        .btn-outline {
+            background: white;
+            color: var(--gray-700);
+            border: 1px solid var(--gray-300);
+        }
+        .btn-outline:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-400);
+        }
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 13px;
+        }
+        .btn-icon {
+            padding: 8px 12px;
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* ============================================================
+           文件列表
+           ============================================================ */
+        .file-list {
+            list-style: none;
+        }
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--gray-100);
+            gap: 12px;
+            transition: var(--transition);
+        }
+        .file-item:last-child {
+            border-bottom: none;
+        }
+        .file-item:hover {
+            background: var(--gray-50);
+            margin: 0 -12px;
+            padding-left: 12px;
+            padding-right: 12px;
+            border-radius: var(--radius-sm);
+        }
+        .file-icon {
+            font-size: 32px;
+            flex-shrink: 0;
+        }
+        .file-details {
+            flex: 1;
+            min-width: 0;
+        }
+        .file-name {
+            font-weight: 600;
+            color: var(--gray-800);
+            font-size: 15px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .file-meta {
+            font-size: 12px;
+            color: var(--gray-400);
+            margin-top: 4px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .file-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .file-actions {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        /* ============================================================
+           多选 & 批量下载
+           ============================================================ */
+        .file-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: var(--primary);
+            flex-shrink: 0;
+            margin: 0;
+        }
+        .batch-download-bar {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            padding: 6px 0 10px;
+            border-bottom: 1px dashed var(--gray-200);
+            margin-bottom: 6px;
+        }
+        .batch-download-bar.active {
+            display: flex;
+        }
+        .select-all-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--gray-500);
+            cursor: pointer;
+            user-select: none;
+        }
+        .selection-count {
+            font-size: 13px;
+            color: var(--primary);
+            font-weight: 600;
+            display: none;
+        }
+
+        /* ============================================================
+           下载页面
+           ============================================================ */
+        .download-page {
+            text-align: center;
+            padding: 20px 0;
+        }
+        .download-page .file-icon-large {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+        .download-page .file-name-large {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--gray-800);
+            margin-bottom: 8px;
+            word-break: break-all;
+        }
+        .download-page .file-size-large {
+            font-size: 15px;
+            color: var(--gray-500);
+            margin-bottom: 24px;
+        }
+        .download-page .btn-download {
+            padding: 14px 40px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        /* ============================================================
+           错误页面
+           ============================================================ */
+        .error-page {
+            text-align: center;
+            padding: 40px 0;
+        }
+        .error-page .error-code {
+            font-size: 72px;
+            font-weight: 800;
+            color: var(--gray-300);
+            line-height: 1;
+        }
+        .error-page .error-message {
+            font-size: 18px;
+            color: var(--gray-500);
+            margin: 16px 0 24px;
+        }
+
+        /* ============================================================
+           空状态
+           ============================================================ */
+        .empty-state {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--gray-400);
+        }
+        .empty-state .empty-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+        .empty-state p {
+            font-size: 14px;
+        }
+
+        /* ============================================================
+           Toast 通知
+           ============================================================ */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: var(--gray-800);
+            color: white;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            box-shadow: var(--shadow-lg);
+            z-index: 9999;
+            transform: translateX(120%);
+            transition: transform 0.3s ease;
+        }
+        .toast.show {
+            transform: translateX(0);
+        }
+        .toast.success {
+            background: var(--success);
+        }
+        .toast.error {
+            background: var(--danger);
+        }
+
+        /* ============================================================
+           底部信息
+           ============================================================ */
+        .footer {
+            text-align: center;
+            padding: 20px 0;
+            color: rgba(255,255,255,0.7);
+            font-size: 13px;
+        }
+
+        /* ============================================================
+           响应式
+           ============================================================ */
+        @media (max-width: 640px) {
+            .container {
+                padding: 12px 10px 30px;
+            }
+            .card {
+                padding: 20px 16px;
+            }
+            .header h1 {
+                font-size: 22px;
+            }
+            .upload-zone {
+                padding: 30px 16px;
+            }
+            .upload-zone .upload-icon {
+                font-size: 36px;
+            }
+            .file-item {
+                flex-wrap: wrap;
+            }
+            .file-actions {
+                width: 100%;
+                justify-content: flex-end;
+                margin-top: 8px;
+            }
+            .share-link-box {
+                flex-direction: column;
+            }
+            .share-link-box .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 页头 -->
+    <div class="header">
+        <h1>📁 内网文件分享</h1>
+        <p>局域网内快速分享文件，拖拽即传</p>
+    </div>
+
+    {% if error_mode is defined and error_mode %}
+    <!-- ============================================================
+         错误页面
+         ============================================================ -->
+    <div class="card">
+        <div class="error-page">
+            <div class="error-code">{{ error_code }}</div>
+            <div class="error-message">{{ error_message }}</div>
+            <a href="/" class="btn btn-primary">返回首页</a>
+        </div>
+    </div>
+
+    {% elif download_mode is defined and download_mode %}
+    <!-- ============================================================
+         下载页面
+         ============================================================ -->
+
+    <!-- 文件信息 + 操作按钮 -->
+    <div class="card">
+        <div class="download-page">
+            <div class="file-icon-large">📄</div>
+            <div class="file-name-large">{{ file_info.original_name }}</div>
+            <div class="file-size-large">{{ file_info.size_str }}</div>
+            <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                <a href="/file/{{ file_id }}" class="btn btn-success btn-download">
+                    <span style="font-size: 18px;">⬇</span> 立即下载
+                </a>
+                {% if file_type != 'other' %}
+                <button class="btn btn-outline btn-download" id="togglePreviewBtn" onclick="togglePreview()">
+                    <span style="font-size: 18px;">👁</span> 预览文件
+                </button>
+                {% endif %}
+            </div>
+            <div style="margin-top: 20px;">
+                <a href="/" class="btn btn-outline btn-sm">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0px;">
+                        <path d="M19 12H5"></path>
+                        <path d="M12 19l-7-7 7-7"></path>
+                    </svg>
+                    返回文件列表
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 预览区域（默认隐藏，点击按钮展开） -->
+    <div id="previewArea" style="display: none;">
+    {% if file_type == 'image' %}
+    <div class="card" style="text-align: center;">
+        <div class="card-title"><span class="icon">🖼️</span> 图片预览</div>
+        <div style="max-height: 350px; overflow: auto; display: flex; justify-content: center; align-items: center;">
+            <img src="/preview/file/{{ file_id }}" alt="{{ file_info.original_name }}"
+                 style="max-width: 100%; max-height: 330px; border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.12);">
+        </div>
+    </div>
+    {% elif file_type == 'video' %}
+    <div class="card">
+        <div class="card-title"><span class="icon">🎬</span> 视频预览</div>
+        <div style="text-align: center;">
+            <video controls style="max-width: 100%; max-height: 320px; border-radius: 10px; background: #000;">
+                <source src="/preview/file/{{ file_id }}" type="{{ file_info.mime_type | default('video/mp4') }}">
+                您的浏览器不支持视频播放
+            </video>
+        </div>
+    </div>
+    {% elif file_type == 'audio' %}
+    <div class="card">
+        <div class="card-title"><span class="icon">🎵</span> 音频预览</div>
+        <div style="text-align: center; padding: 20px 0;">
+            <div style="font-size: 36px; margin-bottom: 12px;">🎧</div>
+            <audio controls style="width: 100%; max-width: 400px;">
+                <source src="/preview/file/{{ file_id }}">
+                您的浏览器不支持音频播放
+            </audio>
+        </div>
+    </div>
+    {% elif file_type == 'pdf' %}
+    <div class="card">
+        <div class="card-title"><span class="icon">📑</span> PDF 预览</div>
+        <iframe id="pdfFrame" src="" style="width: 100%; height: 75vh; min-height: 500px; border: none; border-radius: 10px; background: #525659;"></iframe>
+    </div>
+    {% elif file_type == 'text' %}
+    <div class="card">
+        <div class="card-title"><span class="icon">📝</span> 文本预览</div>
+        <div id="textPreviewLoading" style="text-align: center; padding: 15px; color: var(--text-secondary);">
+            加载中...
+        </div>
+        <pre id="textPreviewContent" style="display: none; background: var(--bg-secondary, #f5f5f5); border-radius: 10px; padding: 16px; max-height: 300px; overflow: auto; font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-break: break-all; margin: 0;"></pre>
+        <div id="textPreviewTruncated" style="display: none; text-align: center; padding: 8px; color: var(--text-secondary); font-size: 12px;">
+            （内容已截断，显示前 <span id="shownLines">0</span> 行，共 <span id="totalLines">0</span> 行）
+        </div>
+    </div>
+    {% elif file_type == 'office' %}
+    <div class="card">
+        <div class="card-title"><span class="icon">📊</span> 文档预览</div>
+        <div id="officePreviewLoading" style="text-align: center; padding: 15px; color: var(--text-secondary);">
+            加载中...
+        </div>
+        <div id="officePreviewContent" style="display: none; max-height: 400px; overflow: auto;"></div>
+    </div>
+    {% endif %}
+    </div>
+
+    {% else %}
+    <!-- ============================================================
+         主页面：上传 + 文件列表
+         ============================================================ -->
+
+    <!-- 上传卡片 -->
+    <div class="card">
+        <div class="card-title">
+            <span class="icon">📤</span> 上传文件
+        </div>
+        <div class="upload-zone" id="uploadZone">
+            <div class="upload-icon">☁️</div>
+            <div class="upload-text">拖拽文件或文件夹到这里，或 <strong style="color: var(--primary);">点击选择</strong></div>
+            <div class="upload-hint">支持任意文件类型，单文件最大 10GB</div>
+            <div style="margin-top: 12px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                <button class="btn btn-primary btn-sm" id="selectFilesBtn" type="button">📄 选择文件</button>
+                <button class="btn btn-outline btn-sm" id="selectFolderBtn" type="button">📁 选择文件夹</button>
+            </div>
+            <input type="file" id="fileInput" multiple style="display: none;">
+            <input type="file" id="folderInput" webkitdirectory mozdirectory directory multiple style="display: none;">
+        </div>
+
+        <!-- 进度条 -->
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar-bg">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="progress-text" id="progressText">准备上传...</div>
+        </div>
+
+        <!-- 上传结果 -->
+        <div class="upload-result" id="uploadResult">
+            <div class="result-header" id="resultHeader">
+                <span id="resultIcon">✅</span>
+                <span id="resultTitle">上传成功</span>
+            </div>
+            <div class="result-info" id="resultInfo"></div>
+            <div class="share-link-box" id="shareLinkBox" style="display:none;">
+                <input type="text" class="share-link-input" id="shareLinkInput" readonly>
+                <button class="btn btn-primary btn-sm" id="copyBtn">📋 复制链接</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 文件列表卡片 -->
+    <div class="card">
+        <div class="card-title" style="justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="icon">📋</span> 已分享文件
+                <span class="selection-count" id="selectionCount">（已选 0 个）</span>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <button class="btn btn-success btn-sm" id="batchDownloadBtn" style="display:none;">📦 打包下载</button>
+                {% if files|length > 0 %}
+                <button class="btn btn-danger btn-sm" id="deleteAllBtn">🗑️ 删除全部</button>
+                {% endif %}
+            </div>
+        </div>
+        {% if files|length > 0 %}
+        <!-- 多选工具栏 -->
+        <div class="batch-download-bar" id="batchDownloadBar">
+            <label class="select-all-label">
+                <input type="checkbox" id="selectAllCheckbox" class="file-checkbox">
+                全选 / 取消全选
+            </label>
+        </div>
+        <ul class="file-list" id="fileList">
+            {% for file in files %}
+            {# 修复XSS：不再将文件名直接拼入onclick，改用data属性+JS事件绑定 #}
+            <li class="file-item" data-id="{{ file.file_id }}" data-name="{{ file.original_name }}" data-link="{{ file.share_link }}" data-preview-type="{{ file.preview_type }}">
+                <input type="checkbox" class="file-checkbox file-select-checkbox" data-id="{{ file.file_id }}">
+                <div class="file-icon">📄</div>
+                <div class="file-details">
+                    <div class="file-name" title="{{ file.original_name }}">{{ file.original_name }}</div>
+                    <div class="file-meta">
+                        <span>💾 {{ file.size_str }}</span>
+                        <span>🕐 {{ file.upload_time }}</span>
+                        <span>⬇ 下载 {{ file.download_count }} 次</span>
+                    </div>
+                </div>
+                <div class="file-actions">
+                    <button class="btn btn-outline btn-sm btn-icon action-copy" title="复制分享链接">
+                        📋
+                    </button>
+                    {% if file.preview_type != 'other' %}
+                    <button class="btn btn-outline btn-sm btn-icon action-preview" title="预览文件">
+                        👁️
+                    </button>
+                    {% endif %}
+                    <a href="/file/{{ file.file_id }}" class="btn btn-primary btn-sm btn-icon" title="下载文件">
+                        ⬇
+                    </a>
+                    <button class="btn btn-danger btn-sm btn-icon action-delete" title="删除文件">
+                        🗑️
+                    </button>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <p>还没有分享的文件，上传一个试试吧</p>
+        </div>
+        {% endif %}
+    </div>
+
+    {% endif %}
+</div>
+
+<!-- 预览模态框 -->
+<div id="previewModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:9999; background:rgba(0,0,0,0.6); backdrop-filter:blur(6px); justify-content:center; align-items:center;">
+    <div id="previewDialog" style="position:relative; background: var(--card-bg, #fff); border-radius:16px; width:90%; max-width:700px; max-height:85vh; overflow:auto; box-shadow:0 20px 60px rgba(0,0,0,0.3); padding:24px;">
+        <button id="previewCloseBtn" style="position:absolute; top:12px; right:16px; background:none; border:none; font-size:24px; cursor:pointer; color: var(--text-primary, #333); z-index:10; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:background 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.08)'" onmouseout="this.style.background='none'">✕</button>
+        <div id="previewTitle" style="font-size:16px; font-weight:600; margin-bottom:16px; padding-right:40px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>
+        <div id="previewBody"></div>
+    </div>
+</div>
+
+<!-- Toast 通知 -->
+<div class="toast" id="toast"></div>
+
+<!-- 底部信息 -->
+<div class="footer">
+    内网文件分享工具 &copy; 2026 | 仅限局域网使用
+</div>
+
+<script>
+/* ============================================================
+   JavaScript - 交互逻辑
+   ============================================================ */
+
+// DOM 元素引用
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+const folderInput = document.getElementById('folderInput');
+const selectFilesBtn = document.getElementById('selectFilesBtn');
+const selectFolderBtn = document.getElementById('selectFolderBtn');
+const progressContainer = document.getElementById('progressContainer');
+const progressBar = document.getElementById('progressBar');
+const progressText = document.getElementById('progressText');
+const uploadResult = document.getElementById('uploadResult');
+const resultHeader = document.getElementById('resultHeader');
+const resultIcon = document.getElementById('resultIcon');
+const resultTitle = document.getElementById('resultTitle');
+const resultInfo = document.getElementById('resultInfo');
+const shareLinkBox = document.getElementById('shareLinkBox');
+const shareLinkInput = document.getElementById('shareLinkInput');
+const copyBtn = document.getElementById('copyBtn');
+const toast = document.getElementById('toast');
+
+// 是否处于下载页面模式（不需要上传逻辑）
+const isDownloadPage = {{ 'true' if (download_mode is defined and download_mode) else 'false' }};
+const isErrorPage = {{ 'true' if (error_mode is defined and error_mode) else 'false' }};
+
+// ============================================================
+// 下载页预览切换
+// ============================================================
+var previewLoaded = false;
+function togglePreview() {
+    var area = document.getElementById('previewArea');
+    var btn = document.getElementById('togglePreviewBtn');
+    if (!area) return;
+    if (area.style.display === 'none') {
+        area.style.display = 'block';
+        if (btn) btn.innerHTML = '<span style="font-size:18px;">✕</span> 关闭预览';
+        // 首次展开时才加载需要异步加载的预览内容
+        if (!previewLoaded) {
+            previewLoaded = true;
+            loadPreviewContent();
+        }
+        area.scrollIntoView({behavior: 'smooth', block: 'start'});
+    } else {
+        area.style.display = 'none';
+        if (btn) btn.innerHTML = '<span style="font-size:18px;">👁</span> 预览文件';
+    }
+}
+
+function loadPreviewContent() {
+    // PDF 需要首次展开时才设置 iframe src
+    var pdfFrame = document.getElementById('pdfFrame');
+    if (pdfFrame && (!pdfFrame.src || pdfFrame.src === '' || pdfFrame.src === window.location.href)) {
+        pdfFrame.src = '/preview/pdfviewer/{{ file_id }}';
+    }
+    // 文本预览
+    if (typeof loadTextPreview === 'function') loadTextPreview();
+    // Office 预览
+    if (typeof loadOfficePreview === 'function') loadOfficePreview();
+}
+
+// ============================================================
+// 文本文件预览加载（仅在下载页面 + 文本类型时执行）
+// ============================================================
+{% if download_mode is defined and download_mode and file_type is defined and file_type == 'text' %}
+function loadTextPreview() {
+    const loading = document.getElementById('textPreviewLoading');
+    const content = document.getElementById('textPreviewContent');
+    const truncated = document.getElementById('textPreviewTruncated');
+    const fileId = '{{ file_id }}';
+
+    fetch('/preview/text/' + fileId)
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                loading.textContent = '加载失败: ' + data.error;
+                return;
+            }
+            // textContent 自动转义，无需手动 replace
+            content.textContent = data.content;
+            content.style.display = 'block';
+            loading.style.display = 'none';
+
+            if (data.truncated) {
+                document.getElementById('shownLines').textContent = data.shown_lines;
+                document.getElementById('totalLines').textContent = data.total_lines;
+                truncated.style.display = 'block';
+            }
+        })
+        .catch(err => {
+            loading.textContent = '加载失败: ' + err.message;
+        });
+}
+{% endif %}
+
+// Office 文件预览加载（仅在下载页面 + office 类型时执行）
+{% if download_mode is defined and download_mode and file_type is defined and file_type == 'office' %}
+function loadOfficePreview() {
+    var loading = document.getElementById('officePreviewLoading');
+    var content = document.getElementById('officePreviewContent');
+    var fileId = '{{ file_id }}';
+
+    fetch('/preview/office/' + fileId)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.error) {
+                loading.textContent = '加载失败: ' + data.error;
+                return;
+            }
+            content.innerHTML = data.content;
+            content.style.display = 'block';
+            loading.style.display = 'none';
+        })
+        .catch(function(err) {
+            loading.textContent = '加载失败: ' + err.message;
+        });
+}
+{% endif %}
+
+// ============================================================
+// Toast 通知
+// ============================================================
+function showToast(message, type, duration) {
+    type = type || 'info';
+    duration = (duration === undefined) ? 2500 : duration;
+    toast.textContent = message;
+    toast.className = 'toast show ' + type;
+    if (duration > 0) {
+        setTimeout(function() {
+            toast.className = 'toast';
+        }, duration);
+    }
+}
+
+// ============================================================
+// 剪贴板复制
+// ============================================================
+function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function() {
+            showToast('✅ 已复制到剪贴板', 'success');
+        }).catch(function() {
+            fallbackCopy(text);
+        });
+    } else {
+        fallbackCopy(text);
+    }
+}
+
+function fallbackCopy(text) {
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+        document.execCommand('copy');
+        showToast('✅ 已复制到剪贴板', 'success');
+    } catch (e) {
+        showToast('❌ 复制失败，请手动复制', 'error');
+    }
+    document.body.removeChild(textarea);
+}
+
+function copyShareLink() {
+    var link = shareLinkInput.value;
+    if (link) {
+        copyToClipboard(link);
+    }
+}
+
+// ============================================================
+// 文件删除（修复XSS：通过 data 属性获取参数，不拼接字符串到事件）
+// ============================================================
+function deleteFile(fileId, fileName) {
+    if (!confirm('确定删除文件 "' + fileName + '" 吗？\n删除后分享链接将失效。')) {
+        return;
+    }
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/delete/' + encodeURIComponent(fileId), true);
+    xhr.onload = function() {
+        try {
+            var resp = JSON.parse(xhr.responseText);
+            if (resp.success) {
+                showToast('✅ ' + resp.message, 'success');
+                // 从列表中移除（遍历查找，避免 fileId 含 CSS 特殊字符导致 querySelector 崩溃）
+                var items = document.querySelectorAll('.file-item');
+                for (var i = 0; i < items.length; i++) {
+                    if (items[i].getAttribute('data-id') === fileId) {
+                        var item = items[i];
+                        item.style.transition = 'opacity 0.3s, transform 0.3s';
+                        item.style.opacity = '0';
+                        item.style.transform = 'translateX(50px)';
+                        (function(el) {
+                            setTimeout(function() {
+                                el.remove();
+                                updateSelectionUI();
+                                var list = document.getElementById('fileList');
+                                if (list && list.children.length === 0) {
+                                    location.reload();
+                                }
+                            }, 300);
+                        })(item);
+                        break;
+                    }
+                }
+            } else {
+                showToast('❌ ' + resp.message, 'error');
+            }
+        } catch (e) {
+            showToast('❌ 删除失败', 'error');
+        }
+    };
+    xhr.onerror = function() {
+        showToast('❌ 网络错误', 'error');
+    };
+    xhr.send();
+}
+
+// ============================================================
+// 删除全部文件
+// ============================================================
+function deleteAllFiles() {
+    if (!confirm('确定删除所有文件吗？\n此操作不可撤销！')) {
+        return;
+    }
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/delete_all', true);
+    xhr.onload = function() {
+        try {
+            var resp = JSON.parse(xhr.responseText);
+            if (resp.success) {
+                showToast('✅ ' + resp.message, 'success');
+                setTimeout(function() {
+                    location.reload();
+                }, 1000);
+            } else {
+                showToast('❌ ' + resp.message, 'error');
+            }
+        } catch (e) {
+            showToast('❌ 删除失败', 'error');
+        }
+    };
+    xhr.onerror = function() {
+        showToast('❌ 网络错误', 'error');
+    };
+    xhr.send();
+}
+
+// ============================================================
+// 事件绑定（修复XSS：用事件委托代替内联onclick）
+// ============================================================
+
+// 文件列表操作按钮 - 事件委托
+document.addEventListener('click', function(e) {
+    // 复制分享链接
+    if (e.target.closest('.action-copy')) {
+        var item = e.target.closest('.file-item');
+        if (item) {
+            var link = item.getAttribute('data-link');
+            if (link) {
+                copyToClipboard(link);
+            }
+        }
+        return;
+    }
+
+    // 删除文件
+    if (e.target.closest('.action-delete')) {
+        var item = e.target.closest('.file-item');
+        if (item) {
+            var fileId = item.getAttribute('data-id');
+            var fileName = item.getAttribute('data-name');
+            if (fileId && fileName) {
+                deleteFile(fileId, fileName);
+            }
+        }
+        return;
+    }
+
+    // 删除全部
+    if (e.target.id === 'deleteAllBtn' || e.target.closest('#deleteAllBtn')) {
+        deleteAllFiles();
+        return;
+    }
+
+    // 复制分享链接按钮
+    if (e.target.id === 'copyBtn' || e.target.closest('#copyBtn')) {
+        copyShareLink();
+        return;
+    }
+});
+
+// ============================================================
+// 预览模态框（主页面文件列表 + 预览按钮）
+// ============================================================
+const previewModal = document.getElementById('previewModal');
+const previewDialog = document.getElementById('previewDialog');
+const previewCloseBtn = document.getElementById('previewCloseBtn');
+const previewTitle = document.getElementById('previewTitle');
+const previewBody = document.getElementById('previewBody');
+
+function openPreview(fileId, fileName, previewType) {
+    previewTitle.textContent = fileName;
+    previewBody.innerHTML = '';
+
+    if (previewType === 'image') {
+        previewBody.innerHTML = '<div style="text-align:center;"><img src="/preview/file/' + fileId + '" style="max-width:100%; max-height:65vh; border-radius:10px;"></div>';
+    } else if (previewType === 'video') {
+        previewBody.innerHTML = '<div style="text-align:center;"><video controls autoplay style="max-width:100%; max-height:65vh; border-radius:10px; background:#000;"><source src="/preview/file/' + fileId + '"></video></div>';
+    } else if (previewType === 'audio') {
+        previewBody.innerHTML = '<div style="text-align:center; padding:20px 0;"><div style="font-size:36px; margin-bottom:12px;">🎧</div><audio controls autoplay style="width:100%; max-width:400px;"><source src="/preview/file/' + fileId + '"></audio></div>';
+    } else if (previewType === 'pdf') {
+        previewBody.innerHTML = '<iframe src="/preview/pdfviewer/' + fileId + '" style="width:100%; height:75vh; min-height:500px; border:none; border-radius:10px; background:#525659;"></iframe>';
+    } else if (previewType === 'text') {
+        previewBody.innerHTML = '<div style="text-align:center; padding:15px; color:var(--text-secondary);">加载中...</div>';
+        fetch('/preview/text/' + fileId)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.error) {
+                    previewBody.innerHTML = '<div style="text-align:center; padding:15px; color:red;">' + escapeHtml(data.error) + '</div>';
+                    return;
+                }
+                var html = '<pre style="background:var(--bg-secondary,#f5f5f5); border-radius:10px; padding:16px; max-height:60vh; overflow:auto; font-family:Consolas,monospace; font-size:13px; line-height:1.5; white-space:pre-wrap; word-break:break-all; margin:0;">' + escapeHtml(data.content) + '</pre>';
+                if (data.truncated) {
+                    html += '<div style="text-align:center; padding:8px; color:var(--text-secondary); font-size:12px;">（已截断，显示前 ' + data.shown_lines + ' 行，共 ' + data.total_lines + ' 行）</div>';
+                }
+                previewBody.innerHTML = html;
+            })
+            .catch(function(err) {
+                previewBody.innerHTML = '<div style="text-align:center; padding:15px; color:red;">加载失败: ' + escapeHtml(err.message) + '</div>';
+            });
+    } else if (previewType === 'office') {
+        previewBody.innerHTML = '<div style="text-align:center; padding:15px; color:var(--text-secondary);">加载中...</div>';
+        fetch('/preview/office/' + fileId)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.error) {
+                    previewBody.innerHTML = '<div style="text-align:center; padding:15px; color:red;">' + escapeHtml(data.error) + '</div>';
+                    return;
+                }
+                previewBody.innerHTML = '<div style="max-height:65vh; overflow:auto;">' + data.content + '</div>';
+            })
+            .catch(function(err) {
+                previewBody.innerHTML = '<div style="text-align:center; padding:15px; color:red;">加载失败: ' + escapeHtml(err.message) + '</div>';
+            });
+    }
+
+    previewModal.style.display = 'flex';
+}
+
+function closePreview() {
+    previewModal.style.display = 'none';
+    previewBody.innerHTML = '';
+}
+
+// 预览按钮点击事件委托
+document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.action-preview');
+    if (!btn) return;
+    var li = btn.closest('.file-item');
+    if (!li) return;
+    var fileId = li.getAttribute('data-id');
+    var fileName = li.getAttribute('data-name');
+    var previewType = li.getAttribute('data-preview-type');
+    openPreview(fileId, fileName, previewType);
+});
+
+if (previewCloseBtn) previewCloseBtn.addEventListener('click', closePreview);
+if (previewModal) previewModal.addEventListener('click', function(e) {
+    if (e.target === previewModal) closePreview();
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && previewModal && previewModal.style.display === 'flex') closePreview();
+});
+
+// ============================================================
+// 批量选择 & 打包下载
+// ============================================================
+var selectAllCheckbox = document.getElementById('selectAllCheckbox');
+var batchDownloadBtn = document.getElementById('batchDownloadBtn');
+var selectionCountEl = document.getElementById('selectionCount');
+var batchDownloadBar = document.getElementById('batchDownloadBar');
+
+function getSelectedIds() {
+    var ids = [];
+    document.querySelectorAll('.file-select-checkbox:checked').forEach(function(cb) {
+        ids.push(cb.getAttribute('data-id'));
+    });
+    return ids;
+}
+
+function updateSelectionUI() {
+    var checked = document.querySelectorAll('.file-select-checkbox:checked');
+    var allCbs = document.querySelectorAll('.file-select-checkbox');
+    var count = checked.length;
+
+    // 打包下载按钮
+    if (batchDownloadBtn) {
+        if (count === 1) {
+            batchDownloadBtn.style.display = 'inline-flex';
+            batchDownloadBtn.textContent = '⬇ 下载';
+            batchDownloadBtn.className = 'btn btn-success btn-sm';
+        } else if (count >= 2) {
+            batchDownloadBtn.style.display = 'inline-flex';
+            batchDownloadBtn.textContent = '📦 打包下载(' + count + ')';
+            batchDownloadBtn.className = 'btn btn-success btn-sm';
+        } else {
+            batchDownloadBtn.style.display = 'none';
+        }
+    }
+
+    // 选中计数
+    if (selectionCountEl) {
+        if (count > 0) {
+            selectionCountEl.style.display = 'inline';
+            selectionCountEl.textContent = '（已选 ' + count + ' 个）';
+        } else {
+            selectionCountEl.style.display = 'none';
+        }
+    }
+
+    // 全选栏
+    if (batchDownloadBar) {
+        batchDownloadBar.classList.toggle('active', allCbs.length > 0);
+    }
+
+    // 全选复选框三态
+    if (selectAllCheckbox && allCbs.length > 0) {
+        if (count === 0) {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = false;
+        } else if (count === allCbs.length) {
+            selectAllCheckbox.checked = true;
+            selectAllCheckbox.indeterminate = false;
+        } else {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = true;
+        }
+    }
+}
+
+// 全选/取消全选
+if (selectAllCheckbox) {
+    selectAllCheckbox.addEventListener('change', function() {
+        var isChecked = this.checked;
+        document.querySelectorAll('.file-select-checkbox').forEach(function(cb) {
+            cb.checked = isChecked;
+        });
+        updateSelectionUI();
+    });
+}
+
+// 单个复选框变化
+document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('file-select-checkbox')) {
+        updateSelectionUI();
+    }
+});
+
+// 批量下载按钮（单文件直链下载，多文件打包下载）
+if (batchDownloadBtn) {
+    batchDownloadBtn.addEventListener('click', function() {
+        var ids = getSelectedIds();
+        if (ids.length === 0) {
+            showToast('请先选择文件', 'error');
+            return;
+        }
+        if (ids.length === 1) {
+            // 单个文件直接用直链下载，无需打包
+            window.location.href = '/file/' + ids[0];
+        } else {
+            batchDownloadFiles(ids);
+        }
+    });
+}
+
+function batchDownloadFiles(fileIds) {
+    showToast('正在打包，请稍候...', 'info', 0);
+
+    fetch('/batch_download', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({file_ids: fileIds})
+    })
+    .then(function(response) {
+        if (!response.ok) {
+            return response.json().then(function(data) {
+                throw new Error(data.message || '服务器错误');
+            }).catch(function() {
+                throw new Error('打包失败 (' + response.status + ')');
+            });
+        }
+        return response.blob();
+    })
+    .then(function(blob) {
+        // 清除"正在打包"toast
+        document.querySelectorAll('.toast').forEach(function(t) { t.className = 'toast'; });
+        var url = window.URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        var now = new Date();
+        var ts = now.getFullYear() +
+            String(now.getMonth()+1).padStart(2,'0') +
+            String(now.getDate()).padStart(2,'0') + '_' +
+            String(now.getHours()).padStart(2,'0') +
+            String(now.getMinutes()).padStart(2,'0') +
+            String(now.getSeconds()).padStart(2,'0');
+        a.download = 'files_' + ts + '.zip';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        showToast('✅ 已打包 ' + fileIds.length + ' 个文件，下载已开始', 'success');
+    })
+    .catch(function(err) {
+        document.querySelectorAll('.toast').forEach(function(t) { t.className = 'toast'; });
+        showToast('❌ ' + err.message, 'error');
+    });
+}
+
+// 初始化选择 UI
+updateSelectionUI();
+
+// ============================================================
+// 上传逻辑（仅在主页面执行）
+// ============================================================
+if (!isDownloadPage && !isErrorPage && uploadZone) {
+    // 防止重复触发的标志
+    var isFileDialogOpen = false;
+
+    // 重置标志（当文件对话框关闭时）
+    function resetDialogFlag() {
+        // 延迟重置，确保change事件先触发
+        setTimeout(function() {
+            isFileDialogOpen = false;
+        }, 300);
+    }
+
+    // 选择文件按钮
+    if (selectFilesBtn) {
+        selectFilesBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!isFileDialogOpen) {
+                isFileDialogOpen = true;
+                fileInput.click();
+                resetDialogFlag();
+            }
+        });
+    }
+
+    // 选择文件夹按钮
+    if (selectFolderBtn) {
+        selectFolderBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!isFileDialogOpen) {
+                isFileDialogOpen = true;
+                folderInput.click();
+                resetDialogFlag();
+            }
+        });
+    }
+
+    // 点击上传区域触发文件选择（排除按钮点击）
+    uploadZone.addEventListener('click', function(e) {
+        // 如果点击的是按钮或按钮内部元素，不触发文件选择
+        if (e.target.closest('#selectFilesBtn') || e.target.closest('#selectFolderBtn')) {
+            return;
+        }
+        // 防止重复触发
+        if (!isFileDialogOpen) {
+            isFileDialogOpen = true;
+            fileInput.click();
+            resetDialogFlag();
+        }
+    });
+
+    // 文件选择变化
+    fileInput.addEventListener('change', function(e) {
+        if (e.target.files.length > 0) {
+            uploadFiles(e.target.files);
+        }
+        // 重置input值，防止浏览器记住上次选择的路径
+        e.target.value = '';
+    });
+
+    // 文件夹选择变化
+    folderInput.addEventListener('change', function(e) {
+        if (e.target.files.length > 0) {
+            uploadFiles(e.target.files);
+        }
+        // 重置input值，防止浏览器记住上次选择的路径
+        e.target.value = '';
+    });
+
+    // 拖拽相关事件
+    uploadZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadZone.classList.add('drag-over');
+    });
+
+    uploadZone.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadZone.classList.remove('drag-over');
+    });
+
+    uploadZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadZone.classList.remove('drag-over');
+
+        // 处理拖拽的项目（支持文件和文件夹）
+        var items = e.dataTransfer.items;
+        if (items && items.length > 0) {
+            var allFiles = [];
+            var pendingEntries = 0;
+
+            for (var i = 0; i < items.length; i++) {
+                var entry = items[i].webkitGetAsEntry ? items[i].webkitGetAsEntry() : null;
+                if (entry) {
+                    pendingEntries++;
+                    traverseFileTree(entry, '', function(files) {
+                        allFiles = allFiles.concat(files);
+                        pendingEntries--;
+                        if (pendingEntries === 0) {
+                            if (allFiles.length > 0) {
+                                uploadFilesFromArray(allFiles);
+                            }
+                        }
+                    });
+                } else {
+                    // 降级处理：直接使用 files
+                    if (e.dataTransfer.files.length > 0) {
+                        uploadFiles(e.dataTransfer.files);
+                        return;
+                    }
+                }
+            }
+            // 如果没有webkitGetAsEntry支持，降级处理
+            if (pendingEntries === 0 && allFiles.length === 0 && e.dataTransfer.files.length > 0) {
+                uploadFiles(e.dataTransfer.files);
+            }
+        } else if (e.dataTransfer.files.length > 0) {
+            uploadFiles(e.dataTransfer.files);
+        }
+    });
+
+    // 阻止页面级的拖放默认行为（防止浏览器直接打开文件）
+    document.addEventListener('dragover', function(e) {
+        e.preventDefault();
+    });
+    document.addEventListener('drop', function(e) {
+        e.preventDefault();
+    });
+}
+
+/**
+ * 递归遍历文件夹树结构
+ */
+function traverseFileTree(item, path, callback) {
+    if (item.isFile) {
+        item.file(function(file) {
+            // 保留相对路径信息
+            file._relativePath = path + file.name;
+            callback([file]);
+        });
+    } else if (item.isDirectory) {
+        var dirReader = item.createReader();
+        var allFiles = [];
+        var readEntries = function() {
+            dirReader.readEntries(function(entries) {
+                if (entries.length === 0) {
+                    // 读取完毕
+                    callback(allFiles);
+                } else {
+                    var pending = entries.length;
+                    for (var i = 0; i < entries.length; i++) {
+                        traverseFileTree(entries[i], path + item.name + '/', function(files) {
+                            allFiles = allFiles.concat(files);
+                            pending--;
+                            if (pending === 0) {
+                                readEntries(); // 继续读取（readEntries可能分批返回）
+                            }
+                        });
+                    }
+                }
+            });
+        };
+        readEntries();
+    }
+}
+
+/**
+ * 从文件数组上传（用于拖拽文件夹场景）
+ */
+function uploadFilesFromArray(fileArray) {
+    var totalFiles = fileArray.length;
+    if (totalFiles === 0) return;
+
+    var uploadedCount = 0;
+    var failedCount = 0;
+
+    // 重置进度UI
+    progressContainer.classList.add('active');
+    progressBar.style.width = '0%';
+    progressText.textContent = '正在上传 0/' + totalFiles + ' ...';
+
+    // 逐个上传
+    uploadNextFromArray(0);
+
+    function uploadNextFromArray(index) {
+        if (index >= fileArray.length) {
+            // 全部完成
+            progressContainer.classList.remove('active');
+            if (failedCount === 0) {
+                showUploadResult(true, '全部上传完成！共 ' + totalFiles + ' 个文件');
+            } else {
+                showUploadResult(
+                    failedCount < totalFiles,
+                    '完成：成功 ' + uploadedCount + ' 个，失败 ' + failedCount + ' 个'
+                );
+            }
+            return;
+        }
+
+        var file = fileArray[index];
+        var formData = new FormData();
+        formData.append('file', file);
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/upload', true);
+
+        // 上传进度
+        xhr.upload.addEventListener('progress', function(e) {
+            if (e.lengthComputable) {
+                var filePercent = Math.round((e.loaded / e.total) * 100);
+                var totalPercent = Math.round(((index + e.loaded / e.total) / totalFiles) * 100);
+                progressBar.style.width = totalPercent + '%';
+                progressText.textContent = '正在上传 ' + (index + 1) + '/' + totalFiles +
+                    ' (' + file.name + ') ' + filePercent + '%';
+            }
+        });
+
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                try {
+                    var resp = JSON.parse(xhr.responseText);
+                    if (resp.success) {
+                        uploadedCount++;
+                        addFileToList(resp.file_id, resp.original_name, resp.size_str, resp.share_link);
+                        shareLinkInput.value = resp.share_link;
+                        shareLinkBox.style.display = 'flex';
+                    } else {
+                        failedCount++;
+                        showToast('❌ ' + file.name + ': ' + resp.message, 'error');
+                    }
+                } catch (e) {
+                    failedCount++;
+                    showToast('❌ ' + file.name + ': 响应解析失败', 'error');
+                }
+            } else {
+                failedCount++;
+                showToast('❌ ' + file.name + ': 上传失败 (' + xhr.status + ')', 'error');
+            }
+            uploadNextFromArray(index + 1);
+        };
+
+        xhr.onerror = function() {
+            failedCount++;
+            showToast('❌ ' + file.name + ': 网络错误', 'error');
+            uploadNextFromArray(index + 1);
+        };
+
+        xhr.send(formData);
+    }
+}
+
+/**
+ * HTML 转义（防止 XSS 注入）
+ */
+function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+/**
+ * 动态添加文件到列表（上传成功后不刷新页面）
+ */
+function addFileToList(fileId, fileName, sizeStr, shareLink) {
+    var fileList = document.getElementById('fileList');
+    var emptyState = document.querySelector('.empty-state');
+    var now = new Date();
+    var timeStr = now.getFullYear() + '-' +
+        String(now.getMonth() + 1).padStart(2, '0') + '-' +
+        String(now.getDate()).padStart(2, '0') + ' ' +
+        String(now.getHours()).padStart(2, '0') + ':' +
+        String(now.getMinutes()).padStart(2, '0') + ':' +
+        String(now.getSeconds()).padStart(2, '0');
+
+    // 如果列表还没创建（首次上传前是空状态），创建 ul
+    if (!fileList) {
+        var card = emptyState ? emptyState.parentElement : document.querySelector('.card:last-of-type');
+        if (emptyState) {
+            emptyState.remove();
+        }
+        // 创建多选工具栏
+        var bar = document.createElement('div');
+        bar.className = 'batch-download-bar active';
+        bar.id = 'batchDownloadBar';
+        bar.innerHTML = '<label class="select-all-label"><input type="checkbox" id="selectAllCheckbox" class="file-checkbox"> 全选 / 取消全选</label>';
+        card.appendChild(bar);
+        // 重新绑定 selectAllCheckbox
+        selectAllCheckbox = document.getElementById('selectAllCheckbox');
+        batchDownloadBar = document.getElementById('batchDownloadBar');
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                var isChecked = this.checked;
+                document.querySelectorAll('.file-select-checkbox').forEach(function(cb) {
+                    cb.checked = isChecked;
+                });
+                updateSelectionUI();
+            });
+        }
+
+        fileList = document.createElement('ul');
+        fileList.className = 'file-list';
+        fileList.id = 'fileList';
+        card.appendChild(fileList);
+
+        // 显示"删除全部"按钮
+        var deleteAllBtn = document.getElementById('deleteAllBtn');
+        if (!deleteAllBtn) {
+            var titleBar = card.querySelector('.card-title');
+            if (titleBar) {
+                // 找到右侧按钮容器
+                var rightActions = titleBar.querySelector('div:last-child');
+                if (!rightActions || rightActions.querySelector('.icon')) {
+                    // 如果没有右侧容器（理论上不会），创建它
+                    rightActions = document.createElement('div');
+                    rightActions.style.cssText = 'display:flex;gap:8px;align-items:center;';
+                    titleBar.appendChild(rightActions);
+                }
+                var btn = document.createElement('button');
+                btn.className = 'btn btn-danger btn-sm';
+                btn.id = 'deleteAllBtn';
+                btn.textContent = '🗑️ 删除全部';
+                rightActions.appendChild(btn);
+            }
+        }
+    }
+
+    // 创建列表项
+    var li = document.createElement('li');
+    li.className = 'file-item';
+    li.setAttribute('data-id', fileId);
+    li.setAttribute('data-name', fileName);
+    li.setAttribute('data-link', shareLink);
+    li.style.opacity = '0';
+    li.style.transform = 'translateY(-10px)';
+
+    li.innerHTML =
+        '<input type="checkbox" class="file-checkbox file-select-checkbox" data-id="' + fileId + '">' +
+        '<div class="file-icon">📄</div>' +
+        '<div class="file-details">' +
+            '<div class="file-name" title="' + escapeHtml(fileName) + '">' + escapeHtml(fileName) + '</div>' +
+            '<div class="file-meta">' +
+                '<span>💾 ' + escapeHtml(sizeStr) + '</span>' +
+                '<span>🕐 ' + escapeHtml(timeStr) + '</span>' +
+                '<span>⬇ 下载 0 次</span>' +
+            '</div>' +
+        '</div>' +
+        '<div class="file-actions">' +
+            '<button class="btn btn-outline btn-sm btn-icon action-copy" title="复制分享链接">📋</button>' +
+            '<button class="btn btn-outline btn-sm btn-icon action-preview" title="预览文件">👁️</button>' +
+            '<a href="/file/' + encodeURIComponent(fileId) + '" class="btn btn-primary btn-sm btn-icon" title="下载文件">⬇</a>' +
+            '<button class="btn btn-danger btn-sm btn-icon action-delete" title="删除文件">🗑️</button>' +
+        '</div>';
+
+    // 根据文件扩展名设置预览类型（与后端 get_preview_type 逻辑一致）
+    var ext = fileName.split('.').pop().toLowerCase();
+    var imageExts = ['jpg','jpeg','png','gif','webp','bmp','svg','ico','tiff'];
+    var videoExts = ['mp4','webm','ogg','mov','avi','mkv'];
+    var audioExts = ['mp3','wav','ogg','flac','aac','wma','m4a'];
+    var pdfExts = ['pdf'];
+    var textExts = ['txt','json','xml','md','csv','log','html','htm','css','js','ts','py','java','c','cpp','h','hpp','go','rs','sh','bat','cmd','ps1','yaml','yml','toml','ini','cfg','conf','sql','rb','php','swift','kt','lua','r','vue','jsx','tsx','scss','less','env','gitignore','dockerfile','makefile','cmake','gradle','properties'];
+    var officeExts = ['xlsx','xls','docx','pptx','ppt'];
+
+    var previewType = 'other';
+    if (imageExts.indexOf(ext) !== -1) previewType = 'image';
+    else if (videoExts.indexOf(ext) !== -1) previewType = 'video';
+    else if (audioExts.indexOf(ext) !== -1) previewType = 'audio';
+    else if (pdfExts.indexOf(ext) !== -1) previewType = 'pdf';
+    else if (textExts.indexOf(ext) !== -1) previewType = 'text';
+    else if (officeExts.indexOf(ext) !== -1) previewType = 'office';
+
+    li.setAttribute('data-preview-type', previewType);
+    // 如果不是 other 类型，预览按钮已有；如果是 other 则隐藏预览按钮
+    if (previewType === 'other') {
+        var previewBtn = li.querySelector('.action-preview');
+        if (previewBtn) previewBtn.style.display = 'none';
+    }
+
+    // 插入到列表顶部（最新的在最前面）
+    fileList.insertBefore(li, fileList.firstChild);
+
+    // 入场动画
+    requestAnimationFrame(function() {
+        li.style.transition = 'opacity 0.3s, transform 0.3s';
+        li.style.opacity = '1';
+        li.style.transform = 'translateY(0)';
+    });
+
+    // 刷新选择 UI
+    updateSelectionUI();
+}
+
+/**
+ * 上传文件列表中的文件（逐个上传，完成后刷新列表）
+ */
+function uploadFiles(files) {
+    var fileArray = Array.prototype.slice.call(files);
+    var totalFiles = fileArray.length;
+    var uploadedCount = 0;
+    var failedCount = 0;
+
+    // 重置进度UI（不隐藏上次上传结果，新结果会覆盖）
+    progressContainer.classList.add('active');
+    progressBar.style.width = '0%';
+    progressText.textContent = '正在上传 0/' + totalFiles + ' ...';
+
+    // 逐个上传
+    uploadNext(0);
+
+    function uploadNext(index) {
+        if (index >= fileArray.length) {
+            // 全部完成
+            progressContainer.classList.remove('active');
+            if (failedCount === 0) {
+                showUploadResult(true, '全部上传完成！共 ' + totalFiles + ' 个文件');
+            } else {
+                showUploadResult(
+                    failedCount < totalFiles,
+                    '完成：成功 ' + uploadedCount + ' 个，失败 ' + failedCount + ' 个'
+                );
+            }
+            // 不刷新页面，保留上传结果和分享链接
+            return;
+        }
+
+        var file = fileArray[index];
+        var formData = new FormData();
+        formData.append('file', file);
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/upload', true);
+
+        // 上传进度
+        xhr.upload.addEventListener('progress', function(e) {
+            if (e.lengthComputable) {
+                var filePercent = Math.round((e.loaded / e.total) * 100);
+                var totalPercent = Math.round(((index + e.loaded / e.total) / totalFiles) * 100);
+                progressBar.style.width = totalPercent + '%';
+                progressText.textContent = '正在上传 ' + (index + 1) + '/' + totalFiles +
+                    ' (' + file.name + ') ' + filePercent + '%';
+            }
+        });
+
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                try {
+                    var resp = JSON.parse(xhr.responseText);
+                    if (resp.success) {
+                        uploadedCount++;
+                        // 动态插入新文件到列表
+                        addFileToList(resp.file_id, resp.original_name, resp.size_str, resp.share_link);
+                        // 始终更新分享链接为当前文件（最后一次上传的链接留在输入框）
+                        shareLinkInput.value = resp.share_link;
+                        shareLinkBox.style.display = 'flex';
+                    } else {
+                        failedCount++;
+                        showToast('❌ ' + file.name + ': ' + resp.message, 'error');
+                    }
+                } catch (e) {
+                    failedCount++;
+                    showToast('❌ ' + file.name + ': 响应解析失败', 'error');
+                }
+            } else {
+                failedCount++;
+                showToast('❌ ' + file.name + ': 上传失败 (' + xhr.status + ')', 'error');
+            }
+            // 继续下一个
+            uploadNext(index + 1);
+        };
+
+        xhr.onerror = function() {
+            failedCount++;
+            showToast('❌ ' + file.name + ': 网络错误', 'error');
+            uploadNext(index + 1);
+        };
+
+        xhr.send(formData);
+    }
+}
+
+/**
+ * 显示上传结果
+ */
+function showUploadResult(success, message) {
+    uploadResult.classList.add('active');
+    if (success) {
+        uploadResult.classList.remove('error');
+        resultHeader.className = 'result-header success';
+        resultIcon.textContent = '✅';
+        resultTitle.textContent = '上传成功';
+    } else {
+        uploadResult.classList.add('error');
+        resultHeader.className = 'result-header error';
+        resultIcon.textContent = '❌';
+        resultTitle.textContent = '上传失败';
+    }
+    resultInfo.textContent = message;
+}
+</script>
+
+</body>
+</html>

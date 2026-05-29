@@ -1,0 +1,30 @@
+# PyInstaller
+build/
+dist/
+*.spec
+*.pyc
+__pycache__/
+
+# 运行时数据
+uploads/
+file_data.json
+
+# Python
+*.pyo
+*.egg-info/
+.eggs/
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 系统
+Thumbs.db
+Desktop.ini
+
+# 临时文件
+*.tmp
+*.log
